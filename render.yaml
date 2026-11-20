@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: doc-qa-bot
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/status
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false

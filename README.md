@@ -1,16 +1,8 @@
----
-title: DocQA - Ask Your Manuals
-emoji: 📄
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # DocQA — Ask Your Manuals (demo project)
 
 > **Demo / portfolio project.** The preloaded "Brewline X2" coffee maker manual is a fictional document made for this demo. Uploaded files are private to your browser session and auto-delete after 24 hours.
+
+**Live demo:** <https://doc-qa-bot-twfd.onrender.com> (free hosting: first load can take up to a minute)
 
 Upload PDF manuals, ask questions in plain English, and get short answers that **cite the exact file and page**. Click a citation to open the PDF on that page.
 
@@ -24,13 +16,13 @@ Upload PDF manuals, ask questions in plain English, and get short answers that *
 - Upload PDFs (or use the preloaded sample) and ask questions in a chat.
 - Answers come only from the documents. Every fact has a numbered citation linked to file + page.
 - If the answer is not in the documents, it says so instead of guessing.
-- Hybrid search (keyword BM25 + Gemini embeddings, merged with reciprocal rank fusion) finds exact part numbers and error codes *and* questions phrased in different words.
+- Keyword search (BM25) finds exact part numbers and error codes. Optional hybrid mode (BM25 + Gemini embeddings, merged with reciprocal rank fusion) switches on when a Gemini key is set, so loosely worded questions match too.
 - Runs without any API key in "search-only" mode, which returns the best passages with citations.
 - Demo guard rails: per-session documents, upload size/file limits, hourly question limit per IP.
 
-**Stack.** Python · FastAPI · pypdf · NumPy (local vector store, no database) · Google Gemini (`gemini-flash-latest` + `gemini-embedding-001`) or Anthropic Claude as a drop-in · vanilla HTML/CSS/JS (no build step) · Docker (Hugging Face Spaces / Render).
+**Stack.** Python · FastAPI · pypdf · NumPy (local vector store, no database) · Anthropic Claude Haiku (live demo) or Google Gemini (adds embeddings) · vanilla HTML/CSS/JS (no build step) · Docker on Render.
 
-**Result.** One small codebase (~500 lines) that a business can point at its own manuals, SOPs or policy documents. Typical answer time is 1–3 s and cost is a fraction of a cent per question on Gemini Flash.
+**Result.** One small codebase (~500 lines) that a business can point at its own manuals, SOPs or policy documents. Answers take a few seconds and cost a fraction of a cent per question.
 
 ## How it works
 
@@ -38,15 +30,15 @@ Upload PDF manuals, ask questions in plain English, and get short answers that *
 PDF ──► extract text per page ──► drop headers/footers ──► ~1500-char chunks (page-tagged)
                                                               │
                                     BM25 index  ◄─────────────┤
-                                    embeddings (.npy) ◄───────┘
-question ──► BM25 top-50 + vector top-50 ──► rank fusion ──► top 6 passages
+                                    embeddings (.npy) ◄───────┘   (only with a Gemini key)
+question ──► BM25 top-50 (+ vector top-50 ──► rank fusion) ──► top 6 passages
          ──► LLM with "answer only from these, cite [n]" ──► answer + source cards
 ```
 
 | File | Job |
 |---|---|
-| `app/rag.py` | PDF ingest, chunking, BM25 + vector hybrid search |
-| `app/llm.py` | Gemini / Claude calls, embeddings, prompt, search-only fallback |
+| `app/rag.py` | PDF ingest, chunking, BM25 + optional vector hybrid search |
+| `app/llm.py` | Claude / Gemini calls, embeddings, prompt, search-only fallback |
 | `app/main.py` | FastAPI routes, sessions, limits, sample preload |
 | `static/` | Chat UI (no framework) |
 | `samples/make_sample.py` | Builds the fictional sample manual PDF |
@@ -58,46 +50,36 @@ cd "E:\AI Portfolio\doc-qa-bot"
 .\run.ps1
 ```
 
-First run makes a `.venv`, installs packages and creates `.env`. Put your key in `.env`:
+First run makes a `.venv`, installs packages and creates `.env`. Put one key in `.env`:
 
 ```
-GEMINI_API_KEY=your-key-here
+ANTHROPIC_API_KEY=your-key-here
+# or GEMINI_API_KEY=your-key-here  (also turns on hybrid search)
 ```
 
-Get a free key at <https://aistudio.google.com/apikey>. Restart, then open <http://localhost:8000>.
-No key? It still runs in search-only mode. Claude works too: set `ANTHROPIC_API_KEY` instead.
+Restart, then open <http://localhost:8000>. No key? It still runs in search-only mode.
 
-**Local test with a Claude subscription (no API key):** if the `claude` CLI is installed and logged in, set `LLM_PROVIDER=claude-cli` in `.env`. Answers go through Claude Haiku via the CLI (~8–12 s each). Local only — the deployed demo needs `GEMINI_API_KEY` or `ANTHROPIC_API_KEY`.
+**Local test with a Claude subscription (no API key):** if the `claude` CLI is installed and logged in, set `LLM_PROVIDER=claude-cli` in `.env`. Answers go through Claude Haiku via the CLI (~8–12 s each). Local only — the deployed demo needs `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`.
 
 Mac/Linux: `python -m venv .venv && .venv/bin/pip install -r requirements.txt && .venv/bin/uvicorn app.main:app --port 8000`
 
-## Deploy (free)
+## Deploy (free, Render)
 
-### Option A — Hugging Face Spaces (recommended: free, no sleep delay for light traffic)
-1. Sign in at huggingface.co → **New Space**.
-2. Name it `doc-qa-bot`, SDK **Docker**, template **Blank**, hardware **CPU basic (free)**, visibility **Public**.
-3. Upload all project files (drag and drop in **Files → Add file → Upload files**), or push with git:
-   ```
-   git clone https://huggingface.co/spaces/<your-user>/doc-qa-bot
-   ```
-   copy the project files in (not `.venv`, `data`, `.env`), then `git add . && git commit -m "init" && git push`.
-4. **Settings → Variables and secrets → New secret**: `GEMINI_API_KEY` = your key.
-5. Wait for the build (2–4 min). Your demo is at `https://huggingface.co/spaces/<your-user>/doc-qa-bot`.
-
-### Option B — Render
 1. Push the project to a GitHub repo.
-2. render.com → **New → Blueprint** → pick the repo (it reads `render.yaml`).
-3. Enter `GEMINI_API_KEY` when asked → **Apply**.
-4. Free plan sleeps after 15 min idle; the first visit after that takes ~1 min.
+2. render.com → **New → Blueprint** → pick the repo (it reads `render.yaml`, free plan).
+3. Enter `ANTHROPIC_API_KEY` when asked → **Deploy Blueprint**. Build takes 3–5 min.
+4. The free plan sleeps after 15 min idle (first visit after that takes ~1 min). To keep it awake, ping `https://<your-app>.onrender.com/api/status` every 10 min with a free cron service such as cron-job.org.
+
+Set a monthly spend limit on the API key so a public demo can never run up a bill.
 
 ## Settings (`.env`)
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `GEMINI_API_KEY` | – | Gemini key (answers + embeddings) |
-| `ANTHROPIC_API_KEY` | – | Used if no Gemini key |
-| `GEMINI_MODEL` | `gemini-flash-latest` | Answer model |
+| `ANTHROPIC_API_KEY` | – | Claude key (answers) |
+| `GEMINI_API_KEY` | – | Gemini key (answers + embeddings); used first if set |
 | `CLAUDE_MODEL` | `claude-haiku-5-5` | Answer model when using Claude |
+| `GEMINI_MODEL` | `gemini-flash-latest` | Answer model when using Gemini |
 | `ASKS_PER_HOUR` | 40 | Questions per IP per hour |
 | `MAX_UPLOAD_MB` / `MAX_FILES_PER_SESSION` | 10 / 3 | Upload limits |
 

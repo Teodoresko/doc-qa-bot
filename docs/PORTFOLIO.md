@@ -5,9 +5,9 @@
 **Title:** AI Document Q&A Bot — answers from PDF manuals with page citations
 
 **Description (paste):**
-Demo project. A chat assistant that reads PDF manuals and answers questions with citations to the exact file and page, so every answer can be checked. Hybrid search (keywords + embeddings) handles exact error codes and part numbers as well as loosely worded questions. If the answer isn't in the documents, it says so instead of guessing. Built with Python/FastAPI, Gemini (Claude-ready), and a lightweight local vector store; deployed free on Hugging Face Spaces. Works for product manuals, SOPs, HR policies, and support knowledge bases.
+Demo project. A chat assistant that reads PDF manuals and answers questions with citations to the exact file and page, so every answer can be checked. Keyword search pins down exact error codes and part numbers. If the answer isn't in the documents, it says so instead of guessing. Built with Python/FastAPI and Claude; deployed free on Render. Works for product manuals, SOPs, HR policies, and support knowledge bases.
 
-**Skills tags:** AI Chatbot · RAG · LLM · Python · FastAPI · Google Gemini · Claude · Vector Search · Prompt Engineering
+**Skills tags:** AI Chatbot · RAG · LLM · Python · FastAPI · Claude API · Prompt Engineering
 
 ## 3 screenshots
 
@@ -26,10 +26,10 @@ Save into `docs/screenshots/`. Screenshot 1 is used in the README.
 | 0–8 s | App open, sample manual in sidebar | "This is a document Q&A bot. It answers questions from your PDF manuals and shows exactly where each answer came from." |
 | 8–25 s | Click chip "How do I descale the machine?" → answer appears | "I ask how to descale the machine. It gives the steps from the manual, and every step has a citation." |
 | 25–35 s | Click `[2]` chip → card glows → click "Page 5 ↗" → PDF opens on page 5 | "Click a citation and you jump to the exact page. Your team can check every answer in one click." |
-| 35–47 s | Type "Machine shows E04, help" | "Exact error codes and part numbers work too, because it combines keyword search with AI meaning search." |
+| 35–47 s | Type "Machine shows E04, help" | "Exact error codes and part numbers work too, because the search matches exact words, not just meaning." |
 | 47–58 s | Type "What does it cost?" → "couldn't find that" | "And when the answer isn't in the documents, it says so. No made-up answers." |
 | 58–72 s | Drag a new PDF into Upload → status "Added … pages" → ask a question about it | "You can upload your own manuals, SOPs or policies. It's ready to answer in seconds." |
-| 72–85 s | Sidebar "How it works" + model line | "Built with Python, FastAPI and Gemini or Claude, deployed for free. I can set this up on your documents, embed it on your website, or connect it to Slack or your help desk." |
+| 72–85 s | Sidebar "How it works" + model line | "Built with Python, FastAPI and Claude, deployed for free. I can set this up on your documents, embed it on your website, or connect it to Slack or your help desk." |
 | 85–90 s | Title card: name + "Demo project" | "Message me and I'll build one on your own docs." |
 
 Recording tips: OBS or Windows `Win+Alt+R`, 1080p, hide bookmarks bar, pre-type nothing, keep the mouse slow.
